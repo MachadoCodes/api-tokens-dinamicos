@@ -1,6 +1,8 @@
-package com.GMR.model;
+package com.GMR.api_tokens_dinamicos.model;
 
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -33,7 +35,11 @@ public class Usuario {
     @Column(nullable = false, unique= false, length = 255)
     private String senha;
 
+    @Column(nullable = false)
+    private boolean ativo = true;
+
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<Conta> contas;
 
     // Construtor Vazio para o JPA/Hibernate
@@ -101,5 +107,32 @@ public class Usuario {
     public boolean isSenhaValida(String senhaAComparar){
         return this.senha.equals(senhaAComparar);
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public boolean isAtivo() {
+        return ativo;
+    }
+
+    public void setAtivo(boolean ativo) {
+        this.ativo = ativo;
+    }
+
+    public List<Conta> getContas() {
+        return contas;
+    }
+
+    public void adicionarConta(Conta conta){
+        this.contas.add(conta);
+        conta.setUsuario(this); // Garantindo que todo cartão tem um dono especificado.
+    }
+
+    public void removerConta(Conta conta){
+        this.contas.remove(conta);
+        conta.setUsuario(null); // Remove o vínculo com o antigo dono.
+    }
+    
 }
                                                       

@@ -1,4 +1,6 @@
-package com.GMR.model;
+package com.GMR.api_tokens_dinamicos.model;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,10 +25,15 @@ public class Conta {
     @Column(nullable = false, length = 10)
     private String agencia;
 
+    @Column(nullable = false)
+    private boolean ativo = true;
+
     
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
+    @JsonBackReference
     private Usuario usuario;
+
 
     // Construtor Vazio para o JPA/Hibernate
     public Conta (){
@@ -70,6 +77,14 @@ public class Conta {
 
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
+    }
+
+    public boolean isAtivo() {
+        return ativo;
+    }
+
+    public void setAtivo(boolean ativo) {
+        this.ativo = ativo;
     }
     
     
