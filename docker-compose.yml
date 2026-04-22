@@ -6,7 +6,7 @@ services:
     restart: always
     environment:
       - POSTGRES_DB=db_tokens_dinamicos
-      - POSTGRES_USER=miguel
+      - POSTGRES_USER=GMR
       - POSTGRES_PASSWORD=senha_secreta_123
     ports:
       - "5432:5432"
