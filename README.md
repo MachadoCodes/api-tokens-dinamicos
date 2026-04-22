@@ -41,10 +41,6 @@
     <li><a href="#uso">Uso</a></li>
     <li>
       <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
     </li>
     <li><a href="#tecnologias-utilizadas">Tecnologias Utilizadas</a></li>
     <li><a href="#arquitetura-do-projeto">Arquitetura do projeto</a></li>
