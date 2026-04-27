@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import com.GMR.api_tokens_dinamicos.model.Usuario;
 
 @Repository
-public interface UsuarioRepository extends JpaRepository<Usuario, Object> {
+public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByCpf(String cpf);
     Optional<Usuario> findByEmail(String email);
 
