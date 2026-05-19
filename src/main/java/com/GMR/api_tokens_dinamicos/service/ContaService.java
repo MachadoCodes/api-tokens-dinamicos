@@ -8,9 +8,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+// 👇 Novos imports para a funcionalidade de histórico
+import com.GMR.api_tokens_dinamicos.model.Comunicacao;
+import com.GMR.api_tokens_dinamicos.repository.ComunicacaoRepository;
+
 import com.GMR.api_tokens_dinamicos.model.Conta;
 import com.GMR.api_tokens_dinamicos.repository.ContaRepository;
- 
+
 @Service
 public class ContaService {
     @Autowired
@@ -18,6 +22,9 @@ public class ContaService {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    @Autowired
+    private ComunicacaoRepository comunicacaoRepository;
 
     public List<Conta> findAllById(Long usuarioId) {
         return contaRepository.findByUsuarioIdAndAtivoTrue(usuarioId);
@@ -27,7 +34,7 @@ public class ContaService {
         return contaRepository.findByIdAndAtivoTrue(contaId);
     }
 
-    public Optional<Conta> findContaByAgenciaAndNumero(String agencia, String numeroDaConta){
+    public Optional<Conta> findContaByAgenciaAndNumero(String agencia, String numeroDaConta) {
         return contaRepository.findByAgenciaAndNumeroConta(agencia, numeroDaConta);
     }
 
@@ -38,8 +45,6 @@ public class ContaService {
 
         }).orElseThrow(() -> new RuntimeException("Usuário não encontrado com o ID: " + usuarioId));
     }
-
-    
 
     public void disableContaById(Long contaId) {
         Conta conta = contaRepository.findById(contaId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conta não encontrado"));
@@ -55,7 +60,10 @@ public class ContaService {
         contaRepository.save(conta);
     }
 
-    
+    public List<Comunicacao> buscarHistoricoPorConta(Long contaId) {
+        return comunicacaoRepository.findByContaId(contaId);
+    }
+
     // public Conta updateCartaoById(Long contaId, Cartao dadosNovos){
     //     return findContaById(contaId).map(cartaoExistente -> {
     //         cartaoExistente.setSaldo(dadosNovos.getSaldo());

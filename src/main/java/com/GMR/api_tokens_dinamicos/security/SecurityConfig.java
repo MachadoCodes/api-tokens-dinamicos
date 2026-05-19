@@ -43,12 +43,12 @@ public class SecurityConfig {
                         // ABRINDO A PORTA DA RECEPÇÃO: Qualquer um pode tentar fazer login
                         .requestMatchers("/api/v1/auth/login").permitAll()
 
-                        // LIBERANDO A CRIAÇÃO DE USUÁRIOS (Regra que estava no outro arquivo que o  Miguel  criou)
+                        // LIBERANDO A CRIAÇÃO DE USUÁRIOS (E as contas/históricos aninhados nele)
                         .requestMatchers("/usuarios/**").permitAll()
 
-                        // No momento, estamos trancando o resto dentro de /api/v1/**
-                        // Para acessar, o cliente precisará do Token JWT no cabeçalho.
-                        .requestMatchers("/api/v1/tokens/**").authenticated()
+                        // 👇 --- NOSSO PASSE LIVRE TEMPORÁRIO PARA A FRENTE A --- 👇
+                        .requestMatchers("/tokens/**", "/api/v1/tokens/**").permitAll()
+                        // 👆 ----------------------------------------------------- 👆
 
                         // Caso queira deixar alguma rota pública (ex: login), usaria .permitAll()
                         .anyRequest().authenticated()

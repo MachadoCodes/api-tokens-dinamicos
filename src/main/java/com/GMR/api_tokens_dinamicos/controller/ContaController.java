@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+// 👇 Novo import necessário para a lista de histórico
+import com.GMR.api_tokens_dinamicos.model.Comunicacao;
 import com.GMR.api_tokens_dinamicos.model.Conta;
 import com.GMR.api_tokens_dinamicos.service.ContaService;
 
@@ -60,5 +62,13 @@ public class ContaController {
     public ResponseEntity<Void> reactiveContaById(@PathVariable Long usuarioId, @PathVariable Long contaId){
         contaService.enableCartaoById(contaId);
         return ResponseEntity.noContent().build();
+    }
+
+    // 👇 Nosso novo endpoint de Histórico de Tokens!
+    @GetMapping("/{contaId}/historico-tokens")
+    public ResponseEntity<List<Comunicacao>> buscarHistoricoDeTokens(@PathVariable Long usuarioId, @PathVariable Long contaId) {
+        // Busca o histórico usando o ID da conta
+        List<Comunicacao> historico = contaService.buscarHistoricoPorConta(contaId);
+        return ResponseEntity.ok(historico);
     }
 }

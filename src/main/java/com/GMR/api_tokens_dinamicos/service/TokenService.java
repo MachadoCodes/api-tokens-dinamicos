@@ -2,13 +2,15 @@ package com.GMR.api_tokens_dinamicos.service;
 
 import com.GMR.api_tokens_dinamicos.model.Conta;
 import com.GMR.api_tokens_dinamicos.model.Token;
+import com.GMR.api_tokens_dinamicos.repository.ContaRepository;
 import com.GMR.api_tokens_dinamicos.repository.TokenRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import com.GMR.api_tokens_dinamicos.model.Comunicacao;
+import com.GMR.api_tokens_dinamicos.repository.ComunicacaoRepository;
 
 /**
  * Classe responsável por orquestrar a lógica de negócio principal do sistema de tokens.
@@ -19,11 +21,16 @@ public class TokenService {
     private final TokenRepository tokenRepository;
     private final MensageriaService mensageriaService;
     private final SecureRandom secureRandom;
+    private final ContaRepository contaRepository;
+    private final ComunicacaoRepository comunicacaoRepository;
 
     // Injeção de dependências via construtor (Boas práticas do Spring)
-    public TokenService(TokenRepository tokenRepository, MensageriaService mensageriaService) {
+    public TokenService(TokenRepository tokenRepository, ContaRepository contaRepository,
+                        MensageriaService mensageriaService, ComunicacaoRepository comunicacaoRepository) {
         this.tokenRepository = tokenRepository;
+        this.contaRepository = contaRepository;
         this.mensageriaService = mensageriaService;
+        this.comunicacaoRepository = comunicacaoRepository;
         this.secureRandom = new SecureRandom();
     }
 
@@ -41,6 +48,14 @@ public class TokenService {
 
         // Delega o envio da mensagem para o serviço de mensageria (Mock)
         mensageriaService.enviarComunicacao(destino, codigoGerado, tipo);
+
+        Comunicacao comunicacao = new Comunicacao();
+        comunicacao.setTipo(tipo.name()); // Transforma o Enum em texto (Ex: "EMAIL" ou "SMS")
+        comunicacao.setDataEnvio(LocalDateTime.now());
+        comunicacao.setConta(conta);
+        comunicacao.setToken(novoToken); // Vincula ao token que acabamos de salvar
+        comunicacaoRepository.save(comunicacao);
+
         return novoToken;
     }
 
