@@ -3,7 +3,6 @@ package com.GMR.api_tokens_dinamicos.model;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -32,9 +31,6 @@ public class Usuario {
     @Column(nullable = false, unique = true, length = 15)
     private String telefone;
 
-    @Column(nullable = false, unique= false, length = 255)
-    private String senha;
-
     @Column(nullable = false)
     private boolean ativo = true;
 
@@ -43,17 +39,16 @@ public class Usuario {
     private List<Conta> contas;
 
     // Construtor Vazio para o JPA/Hibernate
-    public Usuario(){
+    public Usuario() {
 
     }
 
-    // Construtor com os argumentos
-    public Usuario(String nomeUsuario, String cpf, String email, String telefone, String senha) {
+    // Construtor com os argumentos (Sem a senha)
+    public Usuario(String nomeUsuario, String cpf, String email, String telefone) {
         this.nomeUsuario = nomeUsuario;
         this.cpf = cpf;
         this.email = email;
         this.telefone = telefone;
-        this.senha = senha;
     }
 
     public long getId() {
@@ -96,18 +91,6 @@ public class Usuario {
         this.telefone = telefone;
     }
 
-    public String getSenha() {
-        return senha;
-    }
-
-    public void setSenha(String senha) {
-        this.senha = senha;
-    }
-
-    public boolean isSenhaValida(String senhaAComparar){
-        return this.senha.equals(senhaAComparar);
-    }
-
     public void setId(Long id) {
         this.id = id;
     }
@@ -124,15 +107,13 @@ public class Usuario {
         return contas;
     }
 
-    public void adicionarConta(Conta conta){
+    public void adicionarConta(Conta conta) {
         this.contas.add(conta);
-        conta.setUsuario(this); // Garantindo que todo cartão tem um dono especificado.
+        conta.setUsuario(this); // Garante que toda conta tem um dono especificado.
     }
 
-    public void removerConta(Conta conta){
+    public void removerConta(Conta conta) {
         this.contas.remove(conta);
         conta.setUsuario(null); // Remove o vínculo com o antigo dono.
     }
-    
 }
-                                                      

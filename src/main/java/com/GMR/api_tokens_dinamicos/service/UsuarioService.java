@@ -54,7 +54,6 @@ public class UsuarioService {
         return findUsuarioById(id).map(usuarioExistente -> {
             usuarioExistente.setNomeUsuario(dadosNovos.getNomeUsuario());
             usuarioExistente.setEmail(dadosNovos.getEmail());
-            usuarioExistente.setSenha(dadosNovos.getSenha());
 
             return usuarioRepository.save(usuarioExistente);
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario não encontrado para o ID:" + id));

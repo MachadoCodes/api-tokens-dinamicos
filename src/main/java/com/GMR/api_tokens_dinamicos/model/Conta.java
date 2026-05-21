@@ -1,7 +1,8 @@
 package com.GMR.api_tokens_dinamicos.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-
+import com.fasterxml.jackson.annotation.JsonIgnore; // 👇 Import adicionado aqui
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,17 +10,18 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "contas")
 public class Conta {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "numero_conta",nullable = false, unique = true, length = 20)
+    @Column(name = "numero_conta", nullable = false, unique = true, length = 20)
     private String numeroConta;
 
     @Column(nullable = false, length = 10)
@@ -28,15 +30,18 @@ public class Conta {
     @Column(nullable = false)
     private boolean ativo = true;
 
-    
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
     @JsonBackReference
     private Usuario usuario;
 
+    // 👇 A anotação que quebra o loop infinito e esconde os dados de segurança da requisição
+    @JsonIgnore
+    @OneToOne(mappedBy = "conta", cascade = CascadeType.ALL)
+    private Credencial credencial;
 
     // Construtor Vazio para o JPA/Hibernate
-    public Conta (){
+    public Conta() {
 
     }
 
@@ -86,6 +91,12 @@ public class Conta {
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
     }
-    
-    
+
+    public Credencial getCredencial() {
+        return credencial;
+    }
+
+    public void setCredencial(Credencial credencial) {
+        this.credencial = credencial;
+    }
 }

@@ -13,6 +13,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * Classe de configuração central do Spring Security para o projeto.
@@ -43,12 +45,8 @@ public class SecurityConfig {
                         // ABRINDO A PORTA DA RECEPÇÃO: Qualquer um pode tentar fazer login
                         .requestMatchers("/api/v1/auth/login").permitAll()
 
-                        // LIBERANDO A CRIAÇÃO DE USUÁRIOS (Regra que estava no outro arquivo que o  Miguel  criou)
+                        // LIBERANDO A CRIAÇÃO DE USUÁRIOS (E as contas/históricos aninhados nele)
                         .requestMatchers("/usuarios/**").permitAll()
-
-                        // No momento, estamos trancando o resto dentro de /api/v1/**
-                        // Para acessar, o cliente precisará do Token JWT no cabeçalho.
-                        .requestMatchers("/api/v1/tokens/**").authenticated()
 
                         // Caso queira deixar alguma rota pública (ex: login), usaria .permitAll()
                         .anyRequest().authenticated()
@@ -86,4 +84,10 @@ public class SecurityConfig {
                 .build();
         return new InMemoryUserDetailsManager(appDoBanco);
     }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
 }
