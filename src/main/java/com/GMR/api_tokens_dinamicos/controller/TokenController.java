@@ -8,6 +8,8 @@ import com.GMR.api_tokens_dinamicos.repository.ContaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * Controlador REST que expõe os endpoints de geração e validação de tokens via requisições HTTP.
@@ -46,12 +48,19 @@ public class TokenController {
      */
     @PostMapping("/validar")
     public ResponseEntity<String> validarToken(@RequestBody TokenValidationDTO request) {
-        boolean eValido = tokenService.validarToken(request.codigo(), request.contaId());
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String numeroContaDoJwt = authentication.getName();
+
+
+        boolean eValido = tokenService.validarTokenSeguro(request.codigo(), numeroContaDoJwt);
 
         if (eValido) {
-            return ResponseEntity.ok("Token validado com sucesso. Acesso liberado.");
+            return ResponseEntity.ok("Autenticidade confirmada! A comunicação recebida é legítima e foi enviada por nossa instituição.");
         }else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token já utilizado, inválido ou expirado.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Atenção: Token inválido, expirado ou já utilizado. Cuidado com possíveis tentativas de fraude.");
         }
     }
+
+
 }

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.GMR.api_tokens_dinamicos.model.Comunicacao;
 import com.GMR.api_tokens_dinamicos.model.Conta;
 import com.GMR.api_tokens_dinamicos.service.ContaService;
+import com.GMR.api_tokens_dinamicos.dto.ContaRequestDTO;
 
 @RestController
 @RequestMapping("/usuarios/{usuarioId}/contas")
@@ -47,7 +48,7 @@ public class ContaController {
     }
 
     @PostMapping
-    public ResponseEntity<Conta> createConta(@PathVariable Long usuarioId, @RequestBody Conta contanova) {
+    public ResponseEntity<Conta> createConta(@PathVariable Long usuarioId, @RequestBody ContaRequestDTO contanova) {
         Conta contaSalva = contaService.saveConta(usuarioId, contanova);
         return ResponseEntity.status(HttpStatus.CREATED).body(contaSalva);
     }
