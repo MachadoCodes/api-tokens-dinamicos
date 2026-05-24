@@ -3,7 +3,7 @@ package com.GMR.api_tokens_dinamicos.controller;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid; // <-- Importação crucial para a validação
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// 👇 Novo import necessário para a lista de histórico
 import com.GMR.api_tokens_dinamicos.model.Comunicacao;
 import com.GMR.api_tokens_dinamicos.model.Conta;
 import com.GMR.api_tokens_dinamicos.service.ContaService;
@@ -26,8 +25,12 @@ import com.GMR.api_tokens_dinamicos.dto.ContaRequestDTO;
 @RequestMapping("/usuarios/{usuarioId}/contas")
 public class ContaController {
 
-    @Autowired
-    private ContaService contaService;
+    private final ContaService contaService;
+
+    // Injeção de dependência via Construtor (Substitui o @Autowired)
+    public ContaController(ContaService contaService) {
+        this.contaService = contaService;
+    }
 
     @GetMapping("/{contaId}")
     public ResponseEntity<Conta> getContaById(@PathVariable Long usuarioId, @PathVariable Long contaId) {
@@ -48,7 +51,8 @@ public class ContaController {
     }
 
     @PostMapping
-    public ResponseEntity<Conta> createConta(@PathVariable Long usuarioId, @RequestBody ContaRequestDTO contanova) {
+    // 👇 Adição do @Valid para garantir que agência, conta e senha não venham em branco
+    public ResponseEntity<Conta> createConta(@PathVariable Long usuarioId, @Valid @RequestBody ContaRequestDTO contanova) {
         Conta contaSalva = contaService.saveConta(usuarioId, contanova);
         return ResponseEntity.status(HttpStatus.CREATED).body(contaSalva);
     }
@@ -61,7 +65,7 @@ public class ContaController {
 
     @PatchMapping("/{contaId}/reativar")
     public ResponseEntity<Void> reactiveContaById(@PathVariable Long usuarioId, @PathVariable Long contaId){
-        contaService.enableCartaoById(contaId);
+        contaService.enableContaById(contaId);
         return ResponseEntity.noContent().build();
     }
 
