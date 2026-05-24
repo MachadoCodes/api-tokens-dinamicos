@@ -74,7 +74,7 @@ public class ContaService {
         contaRepository.save(conta);
     }
 
-    public void enableCartaoById(Long contaId) {
+    public void enableContaById(Long contaId) {
         Conta conta = contaRepository.findById(contaId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conta não encontrado"));
         conta.setAtivo(true);
         contaRepository.save(conta);
