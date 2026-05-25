@@ -10,8 +10,12 @@ import com.GMR.api_tokens_dinamicos.model.Conta;
 
 @Repository
 public interface ContaRepository extends JpaRepository<Conta, Long> {
+
+    Optional<Conta> findByNumeroConta(String numeroConta);
+
     Optional<Conta> findByAgenciaAndNumeroConta(String agencia, String numeroConta);
 
     Optional<Conta> findByIdAndAtivoTrue(Long Id);
+
     List<Conta> findByUsuarioIdAndAtivoTrue(Long usuarioid);
 }

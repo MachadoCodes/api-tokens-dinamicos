@@ -2,7 +2,9 @@ package com.GMR.api_tokens_dinamicos.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -13,6 +15,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * Classe de configuração central do Spring Security para o projeto.
@@ -34,32 +38,32 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // 1. Desabilita CSRF, pois em APIs Stateless com JWT não é necessário.
+                // 1. Ativa o CORS para o Frontend não ser bloqueado
+                .cors(Customizer.withDefaults()) 
+
+                // 2. Desabilita CSRF, pois em APIs Stateless com JWT não é necessário.
                 .csrf(csrf -> csrf.disable())
 
-                // 2. Configura as regras de autorização das rotas
+                // 3. Configura as regras de autorização das rotas
                 .authorizeHttpRequests(auth -> auth
 
                         // ABRINDO A PORTA DA RECEPÇÃO: Qualquer um pode tentar fazer login
                         .requestMatchers("/api/v1/auth/login").permitAll()
 
-                        // LIBERANDO A CRIAÇÃO DE USUÁRIOS (Regra que estava no outro arquivo que o  Miguel  criou)
-                        .requestMatchers("/usuarios/**").permitAll()
+                        // LIBERANDO APENAS A CRIAÇÃO DE USUÁRIOS (POST)
+                        .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
 
-                        // No momento, estamos trancando o resto dentro de /api/v1/**
-                        // Para acessar, o cliente precisará do Token JWT no cabeçalho.
-                        .requestMatchers("/api/v1/tokens/**").authenticated()
+                        // LIBERANDO APENAS A CRIAÇÃO DE CONTAS (POST)
+                        .requestMatchers(HttpMethod.POST, "/usuarios/*/contas").permitAll()
 
-                        // Caso queira deixar alguma rota pública (ex: login), usaria .permitAll()
+                        // FECHA A PORTA: Todo o resto (histórico, geração de token, etc.) exige JWT
                         .anyRequest().authenticated()
                 )
 
-                // 3. Define que a API não salvará estado de sessão (Stateless)
-                // Isso obriga que cada requisição traga seu próprio Token JWT
+                // 4. Define que a API não salvará estado de sessão (Stateless)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 4. Adiciona o nosso segurança personalizado (JwtFilter) na fila
-                // Ele deve rodar ANTES do filtro padrão de autenticação do Spring
+                // 5. Adiciona o nosso segurança personalizado (JwtFilter) na fila
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .build();
@@ -75,15 +79,19 @@ public class SecurityConfig {
 
     /**
      * Cria um usuário "oficial" do sistema de comunicação do banco.
-     * Em um cenário pós-acadêmico, isso seria substituído por uma busca no banco de dados.
      */
     @Bean
     public UserDetailsService userDetailsService() {
         UserDetails appDoBanco = User.builder()
                 .username("banco-app-oficial")
-                .password("{noop}senhaSegura123") // {noop} indica que a senha não é codificada (apenas para testes)
+                .password("{noop}senhaSegura123")
                 .roles("SISTEMA")
                 .build();
         return new InMemoryUserDetailsManager(appDoBanco);
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
