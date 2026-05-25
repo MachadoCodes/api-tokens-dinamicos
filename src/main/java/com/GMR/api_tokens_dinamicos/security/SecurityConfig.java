@@ -2,7 +2,9 @@ package com.GMR.api_tokens_dinamicos.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -36,28 +38,32 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // 1. Desabilita CSRF, pois em APIs Stateless com JWT não é necessário.
+                // 1. Ativa o CORS para o Frontend não ser bloqueado
+                .cors(Customizer.withDefaults()) 
+
+                // 2. Desabilita CSRF, pois em APIs Stateless com JWT não é necessário.
                 .csrf(csrf -> csrf.disable())
 
-                // 2. Configura as regras de autorização das rotas
+                // 3. Configura as regras de autorização das rotas
                 .authorizeHttpRequests(auth -> auth
 
                         // ABRINDO A PORTA DA RECEPÇÃO: Qualquer um pode tentar fazer login
                         .requestMatchers("/api/v1/auth/login").permitAll()
 
-                        // LIBERANDO A CRIAÇÃO DE USUÁRIOS (E as contas/históricos aninhados nele)
-                        .requestMatchers("/usuarios/**").permitAll()
+                        // LIBERANDO APENAS A CRIAÇÃO DE USUÁRIOS (POST)
+                        .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
 
-                        // Caso queira deixar alguma rota pública (ex: login), usaria .permitAll()
+                        // LIBERANDO APENAS A CRIAÇÃO DE CONTAS (POST)
+                        .requestMatchers(HttpMethod.POST, "/usuarios/*/contas").permitAll()
+
+                        // FECHA A PORTA: Todo o resto (histórico, geração de token, etc.) exige JWT
                         .anyRequest().authenticated()
                 )
 
-                // 3. Define que a API não salvará estado de sessão (Stateless)
-                // Isso obriga que cada requisição traga seu próprio Token JWT
+                // 4. Define que a API não salvará estado de sessão (Stateless)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 4. Adiciona o nosso segurança personalizado (JwtFilter) na fila
-                // Ele deve rodar ANTES do filtro padrão de autenticação do Spring
+                // 5. Adiciona o nosso segurança personalizado (JwtFilter) na fila
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .build();
@@ -73,13 +79,12 @@ public class SecurityConfig {
 
     /**
      * Cria um usuário "oficial" do sistema de comunicação do banco.
-     * Em um cenário pós-acadêmico, isso seria substituído por uma busca no banco de dados.
      */
     @Bean
     public UserDetailsService userDetailsService() {
         UserDetails appDoBanco = User.builder()
                 .username("banco-app-oficial")
-                .password("{noop}senhaSegura123") // {noop} indica que a senha não é codificada (apenas para testes)
+                .password("{noop}senhaSegura123")
                 .roles("SISTEMA")
                 .build();
         return new InMemoryUserDetailsManager(appDoBanco);
@@ -89,5 +94,4 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 }
