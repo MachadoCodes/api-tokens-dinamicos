@@ -3,9 +3,11 @@ package com.GMR.api_tokens_dinamicos.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value; // <-- Nova importação
 import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.Date;
+import jakarta.annotation.PostConstruct; // <-- Nova importação
 
 /**
  * Classe utilitária responsável pela geração, assinatura e validação dos tokens JWT.
@@ -15,17 +17,24 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    // Chave secreta usada para assinar o token.
-    // Em produção, isso NUNCA deve ficar no código, mas sim em variáveis de ambiente.
-    // Esta chave precisa ter pelo menos 256 bits (32 caracteres) para o algoritmo HS256.
-    // Dica para cenário real: Em um ambiente real de produção, esta chave ficaria escondida nas variáveis de ambiente.
-    private final String CHAVE_SECRETA_STRING = "TrustTokenAcessoSeguroBancario2026@GMR!";
+    // O Spring injeta o valor configurado no application.properties direto aqui
+    @Value("${jwt.secret}")
+    private String chaveSecretaString;
 
-    // Converte a string acima para um formato de chave criptográfica real
-    private final SecretKey CHAVE_SECRETA = Keys.hmacShaKeyFor(CHAVE_SECRETA_STRING.getBytes());
+    // Removemos o 'final' e a inicialização direta para fazer isso no método init()
+    private SecretKey CHAVE_SECRETA;
 
-    // Tempo de validade do Token JWT de acessoem milessegundos (Ex: 1/4 de hora)
+    // Tempo de validade do Token JWT de acesso em milissegundos (15 minutos)
     private final long TEMPO_EXPIRACAO_MS = 900000;
+
+    /**
+     * Método de inicialização que roda automaticamente LOGO APÓS o Spring
+     * injetar o valor da variável de ambiente na String 'chaveSecretaString'.
+     */
+    @PostConstruct
+    public void init() {
+        this.CHAVE_SECRETA = Keys.hmacShaKeyFor(chaveSecretaString.getBytes());
+    }
 
     /**
      * Gera um novo Token JWT para um usuário específico.
@@ -54,7 +63,6 @@ public class JwtUtil {
      * Descobre de quem é o token lendo o "subject".
      */
     public String extrairUsername(String token) {
-
         return extrairDados(token).getSubject();
     }
 
