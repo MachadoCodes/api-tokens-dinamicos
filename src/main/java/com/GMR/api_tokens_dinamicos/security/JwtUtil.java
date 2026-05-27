@@ -1,5 +1,6 @@
 package com.GMR.api_tokens_dinamicos.security;
 
+import com.GMR.api_tokens_dinamicos.model.Conta;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -39,13 +40,16 @@ public class JwtUtil {
     /**
      * Gera um novo Token JWT para um usuário específico.
      */
-    public String gerarToken(String username) {
+    public String gerarToken(Conta conta) {
         return Jwts.builder()
-                .subject(username) // Define a quem pertence o token
-                .issuedAt(new Date()) // Data e hora de criação
-                .expiration(new Date(System.currentTimeMillis() + TEMPO_EXPIRACAO_MS)) // Data de expiração
-                .signWith(CHAVE_SECRETA) // Assinatura digital que impede adulterações
-                .compact(); // Constrói a string final do JWT
+                .subject(conta.getNumeroConta()) // Identificador principal (sub)
+                .claim("id", conta.getId()) // Injetando o ID da Conta no payload
+                // Assumindo que a sua entidade Conta tem o mapeamento correto para Usuario
+                .claim("nome", conta.getUsuario().getNomeUsuario()) // Injetando o Nome real no payload
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + TEMPO_EXPIRACAO_MS))
+                .signWith(CHAVE_SECRETA)
+                .compact();
     }
 
     /**

@@ -36,13 +36,34 @@ public class TokenController {
      */
     @PostMapping("/gerar")
     public ResponseEntity<Token> gerarToken(@Valid @RequestBody TokenRequestDTO request) {
-        // Valida se a conta informada existe antes de prosseguir com a geração
-        return contaRepository.findById(request.contaId())
+
+        // 1. Pega a identidade real do usuário logado via JWT (Segurança Padrão de Mercado)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String numeroContaDoJwt = authentication.getName();
+
+        return contaRepository.findByNumeroConta(numeroContaDoJwt)
                 .map(conta -> {
-                    Token token = tokenService.gerarTokenParaComunicacao(conta, request.destino(), request.tipo());
-                    return (ResponseEntity.status(HttpStatus.CREATED).body(token));
+                    // 2. Decide o destino consultando o Banco de Dados, NUNCA o DTO!
+                    String destinoReal = "";
+
+                    if (Token.TipoComunicacao.SMS.equals(request.tipo())) {
+                        // Busca o celular da tabela usuarios
+                        destinoReal = conta.getUsuario().getTelefoneCelular();
+
+                        // Vacina do Twilio: Garante o formato E.164 (+55)
+                        if (destinoReal != null && !destinoReal.startsWith("+")) {
+                            destinoReal = "+55" + destinoReal;
+                        }
+                    } else if (Token.TipoComunicacao.EMAIL.equals(request.tipo())) {
+                        // Busca o e-mail da tabela usuarios
+                        destinoReal = conta.getUsuario().getEmail();
+                    }
+
+                    // 3. Dispara a comunicação para o destino blindado
+                    Token token = tokenService.gerarTokenParaComunicacao(conta, destinoReal, request.tipo());
+                    return ResponseEntity.status(HttpStatus.CREATED).body(token);
                 })
-                .orElse(ResponseEntity.notFound().build()); // Retorna 404 se a conta não existir
+                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
 
     /**
