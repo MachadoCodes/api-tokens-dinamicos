@@ -20,50 +20,168 @@ import java.util.Optional;
 public class TokenService {
 
     private final TokenRepository tokenRepository;
-    private final MensageriaService mensageriaService;
-    private final SecureRandom secureRandom;
     private final ContaRepository contaRepository;
     private final ComunicacaoRepository comunicacaoRepository;
+    private final SecureRandom secureRandom;
 
-    // Injeção de dependências via construtor (Boas práticas do Spring)
+    // Injeção dos novos serviços reais
+    private final SmsService smsService;
+    private final EmailService emailService;
+
+    // Construtor atualizado com as novas dependências
     public TokenService(TokenRepository tokenRepository, ContaRepository contaRepository,
-                        MensageriaService mensageriaService, ComunicacaoRepository comunicacaoRepository) {
+                        ComunicacaoRepository comunicacaoRepository,
+                        SmsService smsService, EmailService emailService) {
         this.tokenRepository = tokenRepository;
         this.contaRepository = contaRepository;
-        this.mensageriaService = mensageriaService;
         this.comunicacaoRepository = comunicacaoRepository;
+        this.smsService = smsService;
+        this.emailService = emailService;
         this.secureRandom = new SecureRandom();
     }
 
     /**
-     * Gera um novo token, salva no banco e aciona o simulador de mensageria.
-     * A anotação @Transactional garante o rollback do banco caso o envio falhe (Propriedade ACID).
+     * Gera um novo token, salva no banco e aciona a mensageria real.
+     * A anotação @Transactional garante o rollback do banco caso algo grave falhe.
      */
     @Transactional
     public Token gerarTokenParaComunicacao(Conta conta, String destino, Token.TipoComunicacao tipo) {
-        // Gera um código numérico de 6 dígitos preenchido com zeros à esquerda
         String codigoGerado = String.format("%06d", secureRandom.nextInt(1000000));
 
         Token novoToken = new Token(codigoGerado, conta, tipo);
         tokenRepository.save(novoToken); // Persiste na base de dados
 
-        // Delega o envio da mensagem para o serviço de mensageria (Mock)
-        mensageriaService.enviarComunicacao(destino, codigoGerado, tipo);
+        // =========================================================================
+        // ROTEAMENTO INDEPENDENTE DE MENSAGERIA (O CÉREBRO)
+        // =========================================================================
+        try {
+            switch (tipo) {
 
+                case SMS:
+
+                    // =========================================================
+                    // MENSAGEM REALISTA PARA APRESENTAÇÃO (CONSOLE)
+                    // =========================================================
+                    String consoleSms =
+                            "TOKEN DE SEGURANÇA: [" + codigoGerado + "]\n\n" +
+                                    "BRADESCO S.A: Compra aprovada em seu cartão no valor de R$ 4.399,00 em MAGAZINE LUIZA.\n" +
+                                    "Caso não reconheça essa transação, entre em contato agora com a nossa central de atendimento: 0800 XXX XXXX.";
+
+                    System.out.println("\n=======================================================");
+                    System.out.println("📱 [MENSAGEM ORIGINAL SMS - MOCK PARA APRESENTAÇÃO A3]");
+                    System.out.println(consoleSms);
+                    System.out.println("=======================================================\n");
+
+
+                    // =========================================================
+                    // MENSAGEM SEGURA PARA TWILIO
+                    // =========================================================
+                    String safeSms =
+                            "TOKEN: " + codigoGerado + "\n\n" +
+                                    "Aqui estaria a mensagem contendo o nome da inst. e uma compra suspeita realizada em uma loja pela conta do cliente, incentivando entrar em contato pelo 0800 xxx xxxx da central.";
+
+                    smsService.enviarSms(destino, safeSms);
+
+                    break;
+
+                case EMAIL:
+
+                    // =========================================================
+                    // E-MAIL REALISTA PARA APRESENTAÇÃO (CONSOLE)
+                    // =========================================================
+                    String assuntoEmailReal =
+                            "Alerta de Segurança Bradesco - Ação Requerida";
+
+                    String consoleEmail =
+                            "<h3>TOKEN DE SEGURANÇA: " + codigoGerado + "</h3>" +
+                                    "<p>Prezado(a) Cliente,</p>" +
+                                    "<p>Identificamos uma tentativa de acesso suspeita à sua conta corrente realizada de um dispositivo não autorizado em Belo Horizonte - MG.</p>" +
+                                    "<p>Para a sua proteção, nossa central de segurança efetuou o bloqueio preventivo temporário de suas movimentações bancárias (PIX, transferências e saques) e de seus cartões de crédito.</p>" +
+                                    "<p>Para restabelecer o seu acesso, é obrigatório realizar a atualização do seu dispositivo de segurança e a sincronização do seu Token no link abaixo.</p>" +
+                                    "<p><a href=\"https://site-exemplo.com\" style=\"color: #cc0000; font-weight: bold;\">[CLIQUE AQUI PARA ATUALIZAR SUA CONTA AGORA]</a></p>" +
+                                    "<p>Atenção: O procedimento deve ser realizado até a data desta comunicação para evitar a restrição definitiva da sua conta e a aplicação de multas administrativas.</p>" +
+                                    "<p>Caso não seja realizado o procedimento através do link, as restrições da conta só poderão ser removidas mediante requerimento presencial em sua agência de origem e pagamento das multas administrativas.</p>" +
+                                    "<p>Em caso de dúvidas, entre em contato imediatamente com nossa central de atendimento pelo número 0800 XXX XXXX.</p>";
+
+                    System.out.println("\n=======================================================");
+                    System.out.println("📧 [MENSAGEM ORIGINAL E-MAIL - MOCK PARA APRESENTAÇÃO A3]");
+                    System.out.println("Assunto: " + assuntoEmailReal);
+                    System.out.println(consoleEmail);
+                    System.out.println("=======================================================\n");
+
+
+                    // =========================================================
+                    // E-MAIL SEGURO PARA MAILTRAP
+                    // =========================================================
+                    String assuntoEmailSeguro =
+                            "Alerta de Segurança Bradesco - Ação Requerida";
+
+                    String safeEmail =
+                            "<h3>TOKEN DE SEGURANÇA: " + codigoGerado + "</h3>" +
+                                    "<p>Prezado(a) Cliente,</p>" +
+                                    "<p>Identificamos uma tentativa de acesso suspeita à sua conta corrente realizada de um dispositivo não autorizado em Belo Horizonte - MG.</p>" +
+                                    "<p>Para a sua proteção, nossa central de segurança efetuou o bloqueio preventivo temporário de suas movimentações bancárias (PIX, transferências e saques) e de seus cartões de crédito.</p>" +
+                                    "<p>Para restabelecer o seu acesso, é obrigatório realizar a atualização do seu dispositivo de segurança e a sincronização do seu Token no link abaixo.</p>" +
+                                    "<p><a href=\"https://site-exemplo.com\" style=\"color: #cc0000; font-weight: bold;\">[CLIQUE AQUI PARA ATUALIZAR SUA CONTA AGORA]</a></p>" +
+                                    "<p>Atenção: O procedimento deve ser realizado até a data desta comunicação para evitar a restrição definitiva da sua conta e a aplicação de multas administrativas.</p>" +
+                                    "<p>Caso não seja realizado o procedimento através do link, as restrições da conta só poderão ser removidas mediante requerimento presencial em sua agência de origem e pagamento das multas administrativas.</p>" +
+                                    "<p>Em caso de dúvidas, entre em contato imediatamente com nossa central de atendimento pelo número 0800 XXX XXXX.</p>";
+
+                    emailService.enviarEmail(destino, assuntoEmailSeguro, safeEmail);
+
+                    break;
+
+                case LIGACAO:
+
+                    // =========================================================
+                    // MOCK DE CHAMADA TTS
+                    // =========================================================
+                    String tokenFalado =
+                            String.join(" ", codigoGerado.split(""));
+
+                    System.out.println("\n=======================================================");
+                    System.out.println("🤖 [ÁUDIO - ROBÔ DE ATENDIMENTO INICIA A CHAMADA]:");
+                    System.out.println("\"Atenção, esta é uma chamada da nossa central de atendimento Bradesco.");
+                    System.out.println("Para garantir a origem da chamada e a sua segurança, anote o seu token de segurança e verifique-o através da seção Token da sua conta Bradesco.");
+                    System.out.println("O código do seu Token é:");
+                    System.out.println(tokenFalado + ".");
+                    System.out.println("Repetindo: " + tokenFalado + ".");
+                    System.out.println("Por favor, acesse sua conta agora e valide este código para garantir a legitimidade da chamada.");
+                    System.out.println("Caso o Token não tenha sido autenticado, desconsidere essa chamada e desligue imediatamente.\"");
+                    System.out.println("=======================================================\n");
+
+                    break;
+
+                default:
+
+                    System.out.println("[MOCK GERAL] - Canal desconhecido. Código: " + codigoGerado);
+
+                    break;
+            }
+
+        } catch (Exception e) {
+
+            System.err.println("⚠️ FALHA NA INTEGRAÇÃO REAL DO CANAL "
+                    + tipo + ": " + e.getMessage());
+
+            System.out.println("🔄 ACIONANDO MOCK DE EMERGÊNCIA PARA A APRESENTAÇÃO...");
+
+            System.out.println("[MOCK DE " + tipo + "] - Destino: "
+                    + destino + " | Código: " + codigoGerado);
+        }
+        // =========================================================================
+
+        // Salva na tabela Comunicacao exatamente o canal que o usuário escolheu
         Comunicacao comunicacao = new Comunicacao();
-        comunicacao.setTipo(tipo.name()); // Transforma o Enum em texto (Ex: "EMAIL" ou "SMS")
+        comunicacao.setTipo(tipo.name());
         comunicacao.setDataEnvio(LocalDateTime.now());
         comunicacao.setConta(conta);
-        comunicacao.setToken(novoToken); // Vincula ao token que acabamos de salvar
+        comunicacao.setToken(novoToken);
         comunicacaoRepository.save(comunicacao);
 
         return novoToken;
     }
 
-    /**
-     * Valida a autenticidade de um token usando a identidade blindada extraída do JWT.
-     * Retorna true se o token for válido e não estiver expirado.
-     */
     /**
      * Valida a autenticidade de um token usando a identidade blindada extraída do JWT.
      * Retorna o Token se for válido, ou null em caso de fraude/expiração.
