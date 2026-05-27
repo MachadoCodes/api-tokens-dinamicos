@@ -1,6 +1,7 @@
 package com.GMR.api_tokens_dinamicos.model;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
 /**
@@ -74,17 +75,26 @@ public class Token {
     public Conta getConta() {
         return conta;
     }
+
     public StatusToken getStatus() {
         return status;
     }
+
     public LocalDateTime getDataExpiracao() {
         return dataExpiracao;
     }
+
     public String getCodigo() {
         return codigo;
     }
+
     public Long getTokenId() {
         return tokenId;
+    }
+
+    // Novo Getter adicionado para o Controller ler o canal de comunicação
+    public TipoComunicacao getTipoComunicacao() {
+        return tipoComunicacao;
     }
 
     // Único Setter liberado, pois o status é a única propriedade mutável no ciclo de vida do token (ex: de ATIVO para USADO)
