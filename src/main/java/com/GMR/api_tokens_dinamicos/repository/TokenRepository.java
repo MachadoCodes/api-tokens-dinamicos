@@ -4,6 +4,7 @@ import com.GMR.api_tokens_dinamicos.model.Token;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
+import java.util.List;
 
 /**
  * Interface de abstração do banco de dados (Repository Pattern).
@@ -16,4 +17,7 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
      * Equivalente a: SELECT * FROM table_tokens WHERE codigo = ? AND conta_id = ? AND status = ?
      */
     Optional<Token> findByCodigoAndContaIdAndStatus(String codigo, Long contaId, Token.StatusToken status);
+
+    // Traz os tokens de uma conta a partir de uma data, do mais novo para o mais velho
+    List<Token> findByContaIdAndDataExpiracaoAfterOrderByDataExpiracaoDesc(Long contaId, java.time.LocalDateTime dataLimite);
 }

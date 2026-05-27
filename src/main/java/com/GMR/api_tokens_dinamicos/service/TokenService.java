@@ -8,6 +8,7 @@ import com.GMR.api_tokens_dinamicos.model.Comunicacao;
 import com.GMR.api_tokens_dinamicos.repository.ComunicacaoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -63,13 +64,17 @@ public class TokenService {
      * Valida a autenticidade de um token usando a identidade blindada extraída do JWT.
      * Retorna true se o token for válido e não estiver expirado.
      */
+    /**
+     * Valida a autenticidade de um token usando a identidade blindada extraída do JWT.
+     * Retorna o Token se for válido, ou null em caso de fraude/expiração.
+     */
     @Transactional
-    public boolean validarTokenSeguro(String codigoFornecido, String numeroConta) {
+    public Token validarTokenSeguro(String codigoFornecido, String numeroConta) {
 
         // 1. Acha a conta usando o número blindado do JWT (como é Unique no banco, retorna só ela)
         Optional<Conta> contaOpt = contaRepository.findByNumeroConta(numeroConta);
         if (contaOpt.isEmpty()) {
-            return false; // Se a conta não existir, falha a validação na hora
+            return null; // Se a conta não existir, falha a validação na hora
         }
 
         Conta contaDoJwt = contaOpt.get();
@@ -82,7 +87,7 @@ public class TokenService {
         );
 
         if (tokenOpt.isEmpty()) {
-            return false; // Falha: Token não encontrado, pertence a outra conta ou já está inativo
+            return null; // Falha: Token não encontrado, pertence a outra conta ou já está inativo
         }
 
         Token token = tokenOpt.get();
@@ -91,12 +96,27 @@ public class TokenService {
         if (LocalDateTime.now().isAfter(token.getDataExpiracao())) {
             token.setStatus(Token.StatusToken.EXPIRADO);
             tokenRepository.save(token);
-            return false;
+            return null;
         }
 
         // 4. Sucesso na validação. Inativa o token para prevenir Ataques de Repetição (Regra do Descarte original de vocês!).
         token.setStatus(Token.StatusToken.USADO);
         tokenRepository.save(token);
-        return true;
+
+        return token; // Retorna o objeto completo para o Controller poder ler o getTipo()
+    }
+
+    public java.util.List<Token> buscarHistorico90Dias(String numeroConta) {
+        java.util.Optional<Conta> contaOpt = contaRepository.findByNumeroConta(numeroConta);
+        if (contaOpt.isEmpty()) {
+            return java.util.List.of();
+        }
+
+        // Regra de Negócio: Visão do cliente restrita a 90 dias
+        java.time.LocalDateTime limite90Dias = java.time.LocalDateTime.now().minusDays(90);
+
+        return tokenRepository.findByContaIdAndDataExpiracaoAfterOrderByDataExpiracaoDesc(
+                contaOpt.get().getId(), limite90Dias
+        );
     }
 }
