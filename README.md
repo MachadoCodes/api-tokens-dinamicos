@@ -40,12 +40,12 @@
     </li>
     <li><a href="#tecnologias-utilizadas">Tecnologias Utilizadas</a></li>
     <li><a href="#como-funciona">Como Funciona</a></li>
-    <li><a href="#interface-do-usuário-frontend"></a>Interface do Usuário</li>
+    <li><a href="#interface-do-usu%C3%A1rio-frontend">Interface do Usuário</a></li>
     <li><a href="#arquitetura-do-projeto">Arquitetura do projeto</a></li>
-    <li><a href="#estrutura-de-pastas"></a>Estrutura de Pastas</li>
+    <li><a href="#estrutura-de-pastas">Estrutura de Pastas</a></li>
     <li><a href="#getting-started">Getting Started</a></li>
     <li><a href="#guia-de-endpoints">Guia de Endpoints</a></li>
-    <li><a href="#testando-a-api-na-prática-postman"></a>
+    <li><a href="#testando-a-api-na-pr%C3%A1tica-postman">Testando a API na Prática</a></li>
     <li><a href="#testes-automatizados-junit">Testes Automatizados</a></li>
     <li><a href="#licença">Licença</a></li>
     <li><a href="#agradecimentos">Agradecimentos</a></li>
