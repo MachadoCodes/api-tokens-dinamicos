@@ -18,7 +18,12 @@ public class CorsConfig {
         // 1. Quem pode acessar? (As URLs do front-end)
         // Colocamos as portas mais comuns de desenvolvimento. Ajuste conforme necessário.
         configuracao.setAllowedOrigins(Arrays.asList(
+                "http://localhost:63341",   // Margem de segurança caso a 42 ocupe
+                "http://localhost:63342",   // <-- Adicionado para o Notebook!
                 "http://localhost:63343",   // Servidor do IntelliJ
+                "http://localhost:63344",   // Margem de segurança caso a 43 ocupe
+                "http://localhost:63345",   // Margem de segurança caso a 44 ocupe
+                "http://localhost:63346",   // Margem de segurança caso a 46 ocupe
                 "http://localhost:5500",    // Porta padrão do Live Server (VS Code)
                 "http://127.0.0.1:5500",
                 "http://localhost:3000",    // Porta padrão do React/Next.js
