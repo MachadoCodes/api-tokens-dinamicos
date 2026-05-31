@@ -1,6 +1,7 @@
 package com.GMR.api_tokens_dinamicos.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record AuthRequestDTO(
@@ -10,7 +11,7 @@ public record AuthRequestDTO(
         String username,
 
         @NotBlank(message = "A senha (password) é obrigatória.")
-        @Size(min = 6, max = 100, message = "A senha deve conter entre 6 e 100 caracteres.")
+        @Pattern(regexp = "^\\d{4}$", message = "A senha de acesso eletrônico deve conter exatamente 4 números.")
         String password
 
 ) {

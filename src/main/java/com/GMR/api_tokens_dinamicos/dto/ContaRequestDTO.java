@@ -1,6 +1,7 @@
 package com.GMR.api_tokens_dinamicos.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record ContaRequestDTO(
@@ -13,7 +14,7 @@ public record ContaRequestDTO(
         String agencia,
 
         @NotBlank(message = "A senha é obrigatória.")
-        @Size(min = 8, max = 100, message = "A senha deve conter entre 8 e 100 caracteres.")
+        @Pattern(regexp = "^\\d{4}$", message = "A senha de acesso eletrônico deve conter exatamente 4 números.")
         String senha
 ) {
 }
