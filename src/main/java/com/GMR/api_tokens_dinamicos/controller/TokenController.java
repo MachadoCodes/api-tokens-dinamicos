@@ -17,11 +17,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Controlador REST que expõe os endpoints de geração e validação de tokens via requisições HTTP.
- */
 @RestController
-@RequestMapping("/api/v1/tokens") // Versionamento da API
+@RequestMapping("/api/v1/tokens")
 public class TokenController {
 
     private final TokenService tokenService;
@@ -32,10 +29,6 @@ public class TokenController {
         this.contaRepository = contaRepository;
     }
 
-    /**
-     * Endpoint responsável por gerar e disparar o token.
-     * Retorna HTTP 201 (Created) em caso de sucesso.
-     */
     @PostMapping("/gerar")
     public ResponseEntity<Token> gerarToken(@Valid @RequestBody TokenRequestDTO request) {
 
@@ -61,10 +54,6 @@ public class TokenController {
                 .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
 
-    /**
-     * Endpoint responsável por validar a autenticidade do código inserido pelo usuário.
-     * Retorna HTTP 200 (OK) para sucesso e HTTP 400 (Bad Request) com JSON de erro para falhas.
-     */
     @PostMapping("/validar")
     public ResponseEntity<?> validarToken(@Valid @RequestBody TokenValidationDTO request) {
 
@@ -72,10 +61,8 @@ public class TokenController {
         String numeroContaDoJwt = authentication.getName();
 
         try {
-            // Tenta validar. Se o TokenService encontrar fraude/expiração, ele interrompe e pula pro catch
             Token tokenValidado = tokenService.validarTokenSeguro(request.codigo(), numeroContaDoJwt);
 
-            // Se passou direto, monta o JSON de sucesso
             Map<String, String> resposta = new HashMap<>();
             resposta.put("mensagem", "Autenticidade confirmada! A comunicação recebida é legítima e foi enviada por nossa instituição.");
             resposta.put("tipoCanal", tokenValidado.getTipoComunicacao().name());
@@ -83,7 +70,6 @@ public class TokenController {
             return ResponseEntity.ok(resposta);
 
         } catch (IllegalArgumentException e) {
-            // Captura a mensagem de segurança exata que criamos no TokenService e manda como JSON
             Map<String, Object> erroResponse = new HashMap<>();
             erroResponse.put("status", HttpStatus.BAD_REQUEST.value());
             erroResponse.put("mensagem", e.getMessage());
@@ -99,22 +85,35 @@ public class TokenController {
 
         java.util.List<Token> tokens = tokenService.buscarHistorico90Dias(numeroConta);
 
-        // Mapeia as entidades para o DTO revertendo o TTL dinâmico corretamente
         java.util.List<TokenHistoricoDTO> historico = tokens.stream().map(t -> {
 
-            // Corrige o cálculo da data de geração baseando-se no canal
             LocalDateTime dataGeracao;
-            if (t.getTipoComunicacao() == Token.TipoComunicacao.LIGACAO) {
-                dataGeracao = t.getDataExpiracao().minusMinutes(30);
-            } else {
+            String canalOrigem;
+            String statusAtual = t.getStatus().name();
+
+            // Mapeamento Inteligente: Tratando fraudes (Canal Nulo)
+            if (t.getTipoComunicacao() == null) {
                 dataGeracao = t.getDataExpiracao().minusHours(24);
+                canalOrigem = "DESCONHECIDO (EXTERNO)";
+            } else {
+                canalOrigem = t.getTipoComunicacao().name();
+                if (t.getTipoComunicacao() == Token.TipoComunicacao.LIGACAO) {
+                    dataGeracao = t.getDataExpiracao().minusMinutes(30);
+                } else {
+                    dataGeracao = t.getDataExpiracao().minusHours(24);
+                }
+            }
+
+            // Mapeamento Dinâmico: Verifica em tempo real se um token ATIVO já venceu por tempo
+            if (t.getStatus() == Token.StatusToken.ATIVO && t.getDataExpiracao().isBefore(LocalDateTime.now())) {
+                statusAtual = Token.StatusToken.EXPIRADO.name();
             }
 
             return new TokenHistoricoDTO(
                     t.getCodigo(),
-                    t.getTipoComunicacao().name(),
+                    canalOrigem,
                     dataGeracao,
-                    t.getStatus().name()
+                    statusAtual
             );
         }).toList();
 
