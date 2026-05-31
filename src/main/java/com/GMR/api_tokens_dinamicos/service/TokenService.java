@@ -78,7 +78,7 @@ public class TokenService {
                     // =========================================================
                     String safeSms =
                             "TOKEN: " + codigoGerado + "\n\n" +
-                                    "Aqui estaria a mensagem contendo o nome da inst. e uma compra suspeita realizada em uma loja pela conta do cliente, incentivando entrar em contato pelo 0800 xxx xxxx da central.";
+                                    "Aqui estaria a mensagem contendo o nome da inst. e uma compra suspeita realizada em uma loja pela conta do cliente, incentivando entrar em contato pela central.";
 
                     smsService.enviarSms(destino, safeSms);
 
@@ -218,7 +218,7 @@ public class TokenService {
 
         // 4. Verifica se está expirado
         if (token.getStatus() == Token.StatusToken.EXPIRADO) {
-            throw new IllegalArgumentException("Token expirado. Caso queiramais informações sobre essa comunicação entre em contato através dos nossos canais oficiais");
+            throw new IllegalArgumentException("Token expirado. Caso queira mais informações sobre essa comunicação entre em contato através dos nossos canais oficiais");
         }
 
         // 5. Validação rigorosa do Tempo de Vida (TTL) se ele ainda for "ATIVO"
