@@ -184,40 +184,51 @@ public class TokenService {
 
     /**
      * Valida a autenticidade de um token usando a identidade blindada extraída do JWT.
-     * Retorna o Token se for válido, ou null em caso de fraude/expiração.
+     * Retorna o Token se for válido, ou lança uma exceção detalhada em caso de falha.
      */
     @Transactional
     public Token validarTokenSeguro(String codigoFornecido, String numeroConta) {
 
-        // 1. Acha a conta usando o número blindado do JWT (como é Unique no banco, retorna só ela)
+        // 1. Acha a conta usando o número blindado do JWT
         Optional<Conta> contaOpt = contaRepository.findByNumeroConta(numeroConta);
         if (contaOpt.isEmpty()) {
-            return null; // Se a conta não existir, falha a validação na hora
+            throw new IllegalArgumentException("Conta inválida para a validação do token.");
         }
 
         Conta contaDoJwt = contaOpt.get();
 
-        // 2. Busca o token ativo correspondente à conta (usando o ID seguro) e ao código informados
-        Optional<Token> tokenOpt = tokenRepository.findByCodigoAndContaIdAndStatus(
+        // 2. Busca o token independentemente do status (para sabermos o motivo exato da falha)
+        Optional<Token> tokenOpt = tokenRepository.findByCodigoAndContaId(
                 codigoFornecido,
-                contaDoJwt.getId(),
-                Token.StatusToken.ATIVO
+                contaDoJwt.getId()
         );
 
+        // Se o banco não achar o token de jeito nenhum (Possível tentativa de fraude)
         if (tokenOpt.isEmpty()) {
-            return null; // Falha: Token não encontrado, pertence a outra conta ou já está inativo
+            // Mensagem genérica propositalmente para não dar dicas ao fraudador
+            throw new IllegalArgumentException("Tentativa de golpe. Se o token inserido não contém erros de digitação, você recebeu uma tentativa de fraude. Não clique em nenhum link e não forneça nenhuma informação.");
         }
 
         Token token = tokenOpt.get();
 
-        // 3. Validação rigorosa do Tempo de Vida (TTL)
+        // 3. Verifica especificamente se JÁ FOI USADO (A sua melhoria de UX!)
+        if (token.getStatus() == Token.StatusToken.USADO) {
+            throw new IllegalArgumentException("Este código já foi validado anteriormente.");
+        }
+
+        // 4. Verifica se está expirado
+        if (token.getStatus() == Token.StatusToken.EXPIRADO) {
+            throw new IllegalArgumentException("Token expirado. Caso queiramais informações sobre essa comunicação entre em contato através dos nossos canais oficiais");
+        }
+
+        // 5. Validação rigorosa do Tempo de Vida (TTL) se ele ainda for "ATIVO"
         if (LocalDateTime.now().isAfter(token.getDataExpiracao())) {
             token.setStatus(Token.StatusToken.EXPIRADO);
             tokenRepository.save(token);
-            return null;
+            throw new IllegalArgumentException("O tempo de validade do Token expirou.");
         }
 
-        // 4. Sucesso na validação. Inativa o token para prevenir Ataques de Repetição (Regra do Descarte original de vocês!).
+        // 6. Sucesso na validação. Inativa o token para prevenir Ataques de Repetição.
         token.setStatus(Token.StatusToken.USADO);
         tokenRepository.save(token);
 

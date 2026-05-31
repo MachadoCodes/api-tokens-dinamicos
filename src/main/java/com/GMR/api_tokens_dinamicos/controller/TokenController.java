@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,29 +39,22 @@ public class TokenController {
     @PostMapping("/gerar")
     public ResponseEntity<Token> gerarToken(@Valid @RequestBody TokenRequestDTO request) {
 
-        // 1. Pega a identidade real do usuário logado via JWT (Segurança Padrão de Mercado)
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String numeroContaDoJwt = authentication.getName();
 
         return contaRepository.findByNumeroConta(numeroContaDoJwt)
                 .map(conta -> {
-                    // 2. Decide o destino consultando o Banco de Dados, NUNCA o DTO!
                     String destinoReal = "";
 
                     if (Token.TipoComunicacao.SMS.equals(request.tipo())) {
-                        // Busca o celular da tabela usuarios
                         destinoReal = conta.getUsuario().getTelefoneCelular();
-
-                        // Vacina do Twilio: Garante o formato E.164 (+55)
                         if (destinoReal != null && !destinoReal.startsWith("+")) {
                             destinoReal = "+55" + destinoReal;
                         }
                     } else if (Token.TipoComunicacao.EMAIL.equals(request.tipo())) {
-                        // Busca o e-mail da tabela usuarios
                         destinoReal = conta.getUsuario().getEmail();
                     }
 
-                    // 3. Dispara a comunicação para o destino blindado
                     Token token = tokenService.gerarTokenParaComunicacao(conta, destinoReal, request.tipo());
                     return ResponseEntity.status(HttpStatus.CREATED).body(token);
                 })
@@ -68,28 +63,32 @@ public class TokenController {
 
     /**
      * Endpoint responsável por validar a autenticidade do código inserido pelo usuário.
-     * Retorna HTTP 200 (OK) com os dados do token para sucesso e HTTP 401 (Unauthorized) para fraude ou expiração.
+     * Retorna HTTP 200 (OK) para sucesso e HTTP 400 (Bad Request) com JSON de erro para falhas.
      */
     @PostMapping("/validar")
-    // Mudança para ResponseEntity<?> para permitir retornar String ou Map dinamicamente
     public ResponseEntity<?> validarToken(@Valid @RequestBody TokenValidationDTO request) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String numeroContaDoJwt = authentication.getName();
 
-        // Recebe o objeto Token completo (ou null) vindo do serviço
-        Token tokenValidado = tokenService.validarTokenSeguro(request.codigo(), numeroContaDoJwt);
+        try {
+            // Tenta validar. Se o TokenService encontrar fraude/expiração, ele interrompe e pula pro catch
+            Token tokenValidado = tokenService.validarTokenSeguro(request.codigo(), numeroContaDoJwt);
 
-        if (tokenValidado != null) {
-            // Cria a estrutura JSON para o front-end ler o canal real
+            // Se passou direto, monta o JSON de sucesso
             Map<String, String> resposta = new HashMap<>();
             resposta.put("mensagem", "Autenticidade confirmada! A comunicação recebida é legítima e foi enviada por nossa instituição.");
-            resposta.put("tipoCanal", tokenValidado.getTipoComunicacao().name()); // SMS, EMAIL, LIGACAO
+            resposta.put("tipoCanal", tokenValidado.getTipoComunicacao().name());
 
             return ResponseEntity.ok(resposta);
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Atenção: Token inválido, expirado ou já utilizado. Cuidado com possíveis tentativas de fraude.");
+
+        } catch (IllegalArgumentException e) {
+            // Captura a mensagem de segurança exata que criamos no TokenService e manda como JSON
+            Map<String, Object> erroResponse = new HashMap<>();
+            erroResponse.put("status", HttpStatus.BAD_REQUEST.value());
+            erroResponse.put("mensagem", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erroResponse);
         }
     }
 
@@ -100,13 +99,24 @@ public class TokenController {
 
         java.util.List<Token> tokens = tokenService.buscarHistorico90Dias(numeroConta);
 
-        // Mapeia as entidades para o DTO de forma limpa
-        java.util.List<TokenHistoricoDTO> historico = tokens.stream().map(t -> new TokenHistoricoDTO(
-                t.getCodigo(),
-                t.getTipoComunicacao().name(),
-                t.getDataExpiracao().minusMinutes(5), // Revertemos os 5 min do TTL para exibir a hora exata da geração na tela
-                t.getStatus().name()
-        )).toList();
+        // Mapeia as entidades para o DTO revertendo o TTL dinâmico corretamente
+        java.util.List<TokenHistoricoDTO> historico = tokens.stream().map(t -> {
+
+            // Corrige o cálculo da data de geração baseando-se no canal
+            LocalDateTime dataGeracao;
+            if (t.getTipoComunicacao() == Token.TipoComunicacao.LIGACAO) {
+                dataGeracao = t.getDataExpiracao().minusMinutes(30);
+            } else {
+                dataGeracao = t.getDataExpiracao().minusHours(24);
+            }
+
+            return new TokenHistoricoDTO(
+                    t.getCodigo(),
+                    t.getTipoComunicacao().name(),
+                    dataGeracao,
+                    t.getStatus().name()
+            );
+        }).toList();
 
         return ResponseEntity.ok(historico);
     }

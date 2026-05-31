@@ -54,7 +54,14 @@ public class Token {
         this.codigo = codigo;
         this.conta = conta;
         this.status = StatusToken.ATIVO;
-        this.dataExpiracao = LocalDateTime.now().plusMinutes(5);
+
+        // Regra de TTL Dinâmico por Canal
+        if (tipoComunicacao == TipoComunicacao.LIGACAO) {
+            this.dataExpiracao = LocalDateTime.now().plusMinutes(30);
+        } else {
+            // Aplica 24 horas tanto para SMS quanto para EMAIL
+            this.dataExpiracao = LocalDateTime.now().plusHours(24);
+        }
     }
 
     // Enumerações para controle de estado
