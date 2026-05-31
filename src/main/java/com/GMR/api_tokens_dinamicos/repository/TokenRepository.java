@@ -12,6 +12,14 @@ import java.util.List;
  */
 @Repository
 public interface TokenRepository extends JpaRepository<Token, Long> {
+
+    /**
+     * [NOVO] Busca um token apenas pelo código e ID da conta.
+     * Necessário para o Service auditar o status (USADO ou EXPIRADO) e retornar a mensagem correta.
+     * Equivalente a: SELECT * FROM table_tokens WHERE codigo = ? AND conta_id = ?
+     */
+    Optional<Token> findByCodigoAndContaId(String codigo, Long contaId);
+
     /**
      * Metod0 customizado (Query Method) para buscar um token específico no banco.
      * Equivalente a: SELECT * FROM table_tokens WHERE codigo = ? AND conta_id = ? AND status = ?
