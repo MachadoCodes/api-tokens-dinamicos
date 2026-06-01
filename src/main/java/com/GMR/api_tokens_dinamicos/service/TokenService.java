@@ -122,7 +122,7 @@ public class TokenService {
         return novoToken;
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = IllegalArgumentException.class)
     public Token validarTokenSeguro(String codigoFornecido, String numeroConta) {
 
         Optional<Conta> contaOpt = contaRepository.findByNumeroConta(numeroConta);
