@@ -137,16 +137,13 @@ public class TokenService {
                 contaDoJwt.getId()
         );
 
-        // REGISTRO DE AUDITORIA: Código não gerado pelo banco ou erro de digitação
+        // REGISTRO DE AUDITORIA: Código não gerado pelo banco ou erro de digitação (1ª Tentativa)
         if (tokenOpt.isEmpty()) {
             Token tentativaSuspeita = new Token();
             tentativaSuspeita.setCodigo(codigoFornecido);
             tentativaSuspeita.setConta(contaDoJwt);
             tentativaSuspeita.setStatus(Token.StatusToken.SUSPEITO);
-
-            // 👇 A MUDANÇA É APENAS NESTA LINHA 👇
             tentativaSuspeita.setTipoComunicacao(Token.TipoComunicacao.DESCONHECIDO);
-
             tentativaSuspeita.setDataExpiracao(LocalDateTime.now().plusHours(24));
 
             tokenRepository.save(tentativaSuspeita);
@@ -156,6 +153,11 @@ public class TokenService {
 
         Token token = tokenOpt.get();
 
+        // 🔥 NOVO BLOQUEIO: Se o token achado já foi marcado como SUSPEITO anteriormente (2ª Tentativa em diante)
+        if (token.getStatus() == Token.StatusToken.SUSPEITO) {
+            throw new IllegalArgumentException("Tentativa de golpe bloqueada. Este código já foi identificado como fraudulento em uma tentativa anterior. Não insira códigos desconhecidos.");
+        }
+
         if (token.getStatus() == Token.StatusToken.USADO) {
             throw new IllegalArgumentException("Este código já foi validado anteriormente.");
         }
@@ -164,28 +166,4 @@ public class TokenService {
             throw new IllegalArgumentException("Token expirado. Caso queira mais informações sobre essa comunicação entre em contato através dos nossos canais oficiais");
         }
 
-        if (LocalDateTime.now().isAfter(token.getDataExpiracao())) {
-            token.setStatus(Token.StatusToken.EXPIRADO);
-            tokenRepository.save(token);
-            throw new IllegalArgumentException("O tempo de validade do Token expirou.");
-        }
-
-        token.setStatus(Token.StatusToken.USADO);
-        tokenRepository.save(token);
-
-        return token;
-    }
-
-    public java.util.List<Token> buscarHistorico90Dias(String numeroConta) {
-        java.util.Optional<Conta> contaOpt = contaRepository.findByNumeroConta(numeroConta);
-        if (contaOpt.isEmpty()) {
-            return java.util.List.of();
-        }
-
-        java.time.LocalDateTime limite90Dias = java.time.LocalDateTime.now().minusDays(90);
-
-        return tokenRepository.findByContaIdAndDataExpiracaoAfterOrderByDataExpiracaoDesc(
-                contaOpt.get().getId(), limite90Dias
-        );
-    }
-}
+        if (LocalDateTime.now().is
