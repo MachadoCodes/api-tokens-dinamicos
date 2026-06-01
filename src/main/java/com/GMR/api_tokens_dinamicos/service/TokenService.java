@@ -166,4 +166,28 @@ public class TokenService {
             throw new IllegalArgumentException("Token expirado. Caso queira mais informações sobre essa comunicação entre em contato através dos nossos canais oficiais");
         }
 
-        if (LocalDateTime.now().is
+        if (LocalDateTime.now().isAfter(token.getDataExpiracao())) {
+            token.setStatus(Token.StatusToken.EXPIRADO);
+            tokenRepository.save(token);
+            throw new IllegalArgumentException("O tempo de validade do Token expirou.");
+        }
+
+        token.setStatus(Token.StatusToken.USADO);
+        tokenRepository.save(token);
+
+        return token;
+    }
+
+    public java.util.List<Token> buscarHistorico90Dias(String numeroConta) {
+        java.util.Optional<Conta> contaOpt = contaRepository.findByNumeroConta(numeroConta);
+        if (contaOpt.isEmpty()) {
+            return java.util.List.of();
+        }
+
+        java.time.LocalDateTime limite90Dias = java.time.LocalDateTime.now().minusDays(90);
+
+        return tokenRepository.findByContaIdAndDataExpiracaoAfterOrderByDataExpiracaoDesc(
+                contaOpt.get().getId(), limite90Dias
+        );
+    }
+}
