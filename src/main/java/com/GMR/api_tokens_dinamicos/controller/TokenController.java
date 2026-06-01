@@ -91,8 +91,8 @@ public class TokenController {
             String canalOrigem;
             String statusAtual = t.getStatus().name();
 
-            // Mapeamento Inteligente: Tratando fraudes (Canal Nulo)
-            if (t.getTipoComunicacao() == null) {
+            // 👇 A MUDANÇA ESTÁ NESTA LINHA: Tratando fraudes (Procurando pelo Enum DESCONHECIDO)
+            if (t.getTipoComunicacao() == Token.TipoComunicacao.DESCONHECIDO) {
                 dataGeracao = t.getDataExpiracao().minusHours(24);
                 canalOrigem = "DESCONHECIDO (EXTERNO)";
             } else {

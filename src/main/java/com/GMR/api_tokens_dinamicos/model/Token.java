@@ -63,7 +63,8 @@ public class Token {
     public enum TipoComunicacao {
         SMS,
         EMAIL,
-        LIGACAO
+        LIGACAO,
+        DESCONHECIDO
     }
 
     // Getters
