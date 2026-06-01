@@ -65,7 +65,10 @@ public class TokenController {
 
             Map<String, String> resposta = new HashMap<>();
             resposta.put("mensagem", "Autenticidade confirmada! A comunicação recebida é legítima e foi enviada por nossa instituição.");
-            resposta.put("tipoCanal", tokenValidado.getTipoComunicacao().name());
+
+            // Programação Defensiva: Evita NullPointerException se o banco retornar vazio
+            String tipoCanal = tokenValidado.getTipoComunicacao() != null ? tokenValidado.getTipoComunicacao().name() : "DESCONHECIDO";
+            resposta.put("tipoCanal", tipoCanal);
 
             return ResponseEntity.ok(resposta);
 
@@ -89,15 +92,20 @@ public class TokenController {
 
             LocalDateTime dataGeracao;
             String canalOrigem;
-            String statusAtual = t.getStatus().name();
 
-            // 👇 A MUDANÇA ESTÁ NESTA LINHA: Tratando fraudes (Procurando pelo Enum DESCONHECIDO)
-            if (t.getTipoComunicacao() == Token.TipoComunicacao.DESCONHECIDO) {
+            // Programação Defensiva: Extração segura dos Enums
+            Token.StatusToken statusToken = t.getStatus() != null ? t.getStatus() : Token.StatusToken.EXPIRADO;
+            Token.TipoComunicacao tipoComunicacao = t.getTipoComunicacao() != null ? t.getTipoComunicacao() : Token.TipoComunicacao.DESCONHECIDO;
+
+            String statusAtual = statusToken.name();
+
+            // Mapeamento Inteligente: Tratando fraudes de forma limpa
+            if (tipoComunicacao == Token.TipoComunicacao.DESCONHECIDO) {
                 dataGeracao = t.getDataExpiracao().minusHours(24);
                 canalOrigem = "DESCONHECIDO (EXTERNO)";
             } else {
-                canalOrigem = t.getTipoComunicacao().name();
-                if (t.getTipoComunicacao() == Token.TipoComunicacao.LIGACAO) {
+                canalOrigem = tipoComunicacao.name();
+                if (tipoComunicacao == Token.TipoComunicacao.LIGACAO) {
                     dataGeracao = t.getDataExpiracao().minusMinutes(30);
                 } else {
                     dataGeracao = t.getDataExpiracao().minusHours(24);
@@ -105,7 +113,7 @@ public class TokenController {
             }
 
             // Mapeamento Dinâmico: Verifica em tempo real se um token ATIVO já venceu por tempo
-            if (t.getStatus() == Token.StatusToken.ATIVO && t.getDataExpiracao().isBefore(LocalDateTime.now())) {
+            if (statusToken == Token.StatusToken.ATIVO && t.getDataExpiracao().isBefore(LocalDateTime.now())) {
                 statusAtual = Token.StatusToken.EXPIRADO.name();
             }
 
