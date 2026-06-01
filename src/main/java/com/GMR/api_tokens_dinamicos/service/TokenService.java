@@ -143,7 +143,10 @@ public class TokenService {
             tentativaSuspeita.setCodigo(codigoFornecido);
             tentativaSuspeita.setConta(contaDoJwt);
             tentativaSuspeita.setStatus(Token.StatusToken.SUSPEITO);
-            tentativaSuspeita.setTipoComunicacao(null); // Canal nulo evidencia fraude externa
+
+            // 👇 A MUDANÇA É APENAS NESTA LINHA 👇
+            tentativaSuspeita.setTipoComunicacao(Token.TipoComunicacao.DESCONHECIDO);
+
             tentativaSuspeita.setDataExpiracao(LocalDateTime.now().plusHours(24));
 
             tokenRepository.save(tentativaSuspeita);
