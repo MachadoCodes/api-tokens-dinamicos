@@ -38,6 +38,10 @@
         <li><a href="#a-proposta">A Proposta</a></li>
       </ul>
     </li>
+    <li><a href="#uso">Uso</a></li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+    </li>
     <li><a href="#tecnologias-utilizadas">Tecnologias Utilizadas</a></li>
     <li><a href="#como-funciona">Como Funciona</a></li>
     <li><a href="#interface-do-usu%C3%A1rio-frontend">Interface do Usuário</a></li>
@@ -418,7 +422,7 @@ mvn test
       <a href="https://github.com/MachadoCodes">
         <img src="https://avatars.githubusercontent.com/u/142549072" width="200px;" alt="Renato Gonçalves Machado"/>
       </a>
-      <br/>
+      <br />
       <p><b>Renato Gonçalves Machado</b></p>
       <p><a href="">LinkedIn</a> | <a href="https://github.com/MachadoCodes">GitHub</a></p>
     </td>
@@ -426,7 +430,7 @@ mvn test
       <a href="https://github.com/MiguelRebequi">
         <img src="https://avatars.githubusercontent.com/u/130229587" width="200px;" alt="Miguel Martinho Rebequi"/>
       </a>
-      <br/>
+      <br />
       <p><b>Miguel Martinho Rebequi</b></p>
       <p><a href="https://www.linkedin.com/in/miguel-martinho-rebequi-08753b271/">LinkedIn</a> | <a href="https://github.com/MiguelRebequi">GitHub</a></p>
     </td>
@@ -434,7 +438,7 @@ mvn test
       <a href="https://github.com/GuilhermeChiuchi">
         <img src="https://avatars.githubusercontent.com/u/136472706" width="200px;" alt="Guilherme Chiuchi Pereira"/>
       </a>
-      <br/>
+      <br />
       <p><b>Guilherme Chiuchi Pereira</b></p>
       <p><a href="">LinkedIn</a> | <a href="https://github.com/GuilhermeChiuchi">GitHub</a></p>
     </td>
