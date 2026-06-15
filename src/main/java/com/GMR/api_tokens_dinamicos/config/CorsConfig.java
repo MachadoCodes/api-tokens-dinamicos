@@ -16,8 +16,11 @@ public class CorsConfig {
         CorsConfiguration configuracao = new CorsConfiguration();
 
         // 1. Quem pode acessar? (As URLs do front-end)
-        // Colocamos as portas mais comuns de desenvolvimento. Ajuste conforme necessário.
         configuracao.setAllowedOrigins(Arrays.asList(
+                // PRODUÇÃO (Nuvem)
+                "https://trust-token-frontend.onrender.com", // <-- INSIRA O LINK DO FRONTEND NO RENDER AQUI
+
+                // DESENVOLVIMENTO (Local)
                 "http://localhost:63341",   // Margem de segurança caso a 42 ocupe
                 "http://localhost:63342",   // <-- Adicionado para o Notebook!
                 "http://localhost:63343",   // Servidor do IntelliJ
